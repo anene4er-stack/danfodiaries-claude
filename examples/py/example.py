@@ -1,40 +1,31 @@
 import os
 import sys
-import requests
+
 from dotenv import load_dotenv
+from anthropic import Anthropic
 
 load_dotenv()
 
 API_KEY = os.getenv('ANTHROPIC_API_KEY')
-MODEL = os.getenv('CLAUDE_MODEL', 'claude-2')
-ENDPOINT = 'https://api.anthropic.com/v1/complete'
+MODEL = os.getenv('CLAUDE_MODEL', 'claude-3-5-sonnet-20241022')
 
 if not API_KEY:
-    print('Error: ANTHROPIC_API_KEY not set. Copy .env.example to .env and set it or export the variable in your shell.')
+    print('Error: ANTHROPIC_API_KEY not set. Create a .env file from .env.example and add your key.')
     sys.exit(1)
+
+client = Anthropic(api_key=API_KEY)
 
 prompt = """
-Human: Write a short friendly summary (2-3 sentences) of why people enjoy journaling for the "DanfoDiaries" project.
+You are a helpful journaling assistant.
 
-Assistant:
+Write a brief, encouraging summary of why journaling helps people feel more grounded and self-aware.
 """
 
-json_body = {
-    'model': MODEL,
-    'prompt': prompt,
-    'max_tokens': 300,
-    'temperature': 0.2,
-}
+response = client.messages.create(
+    model=MODEL,
+    max_tokens=400,
+    temperature=0.4,
+    messages=[{"role": "user", "content": prompt}],
+)
 
-headers = {
-    'Content-Type': 'application/json',
-    'x-api-key': API_KEY,
-}
-
-resp = requests.post(ENDPOINT, headers=headers, json=json_body)
-
-if not resp.ok:
-    print(f'Error: HTTP {resp.status_code} - {resp.text}')
-    sys.exit(1)
-
-print('Response JSON:\n', resp.json())
+print(response)

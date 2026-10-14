@@ -1,31 +1,49 @@
-# DanfoDiaries — Claude connector
+# DanfoDiaries — Claude integration
 
-Starter repository with examples showing how to call Anthropic Claude (Node and Python).
+This repository now includes a small Express API that connects DanfoDiaries to Anthropic Claude.
 
-This repo contains minimal examples only — intended as a starting point. Set your ANTHROPIC_API_KEY in environment before running.
+What is included
+- Express server for local API integration
+- Claude messages API integration via Anthropic SDK
+- Example journaling reflection endpoint
+- Example chat endpoint
 
-Quickstart
----------
+Quick start
+1. Create a local environment file:
+   cp .env.example .env
+2. Add your Anthropic API key to `.env`:
+   ANTHROPIC_API_KEY=your_key_here
+3. Install dependencies:
+   npm install
+4. Start the app:
+   npm start
+   or use development mode:
+   npm run dev
 
-Node (requires Node 18+):
+Endpoints
+- GET /health
+- GET /
+- POST /api/chat
+- POST /api/journal/reflect
 
-1. Copy .env.example to .env and set ANTHROPIC_API_KEY
-2. cd examples/node
-3. npm install (not required for Node 18+ since this example uses global fetch; package.json exists so you can run npm start)
-4. npm start
+Example: journal reflection request
+curl -X POST http://localhost:3000/api/journal/reflect \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "Reflection on today",
+    "mood": "hopeful",
+    "content": "I finally completed a difficult task and felt proud of myself. I still have a lot to do, but I feel more confident than I did yesterday."
+  }'
 
-Python (requires Python 3.8+):
-
-1. Copy .env.example to .env and set ANTHROPIC_API_KEY
-2. python -m pip install requests python-dotenv
-3. python examples/py/example.py
-
-Files added
-- examples/node/index.js — Node example using fetch
-- examples/node/package.json — minimal package.json (type module)
-- examples/py/example.py — Python requests example
-- .env.example — env template
-- README.md — this quickstart and notes
+Example: chat request
+curl -X POST http://localhost:3000/api/chat \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "message": "Help me write a short, encouraging journal conclusion for today.",
+    "systemPrompt": "You are a supportive journaling assistant for DanfoDiaries."
+  }'
 
 Notes
-- The examples use the Anthropic HTTP API endpoint at https://api.anthropic.com/v1/complete and the X-API-Key header (ANTHROPIC_API_KEY). Adjust model names and endpoint if Anthropic's API changes.
+- The app uses the Anthropic Messages API and supports `claude-3-5-sonnet-20241022` by default.
+- You can change the model in `.env` with `CLAUDE_MODEL`.
+- For production, add auth, rate limiting, and request validation.
