@@ -1,0 +1,8 @@
+# Netlify: the web page is static (public/), and the API runs as the
+# netlify/functions/api.mjs function at /api/* and /health.
+[build]
+  publish = "public"
+  command = ""
+
+[functions]
+  node_bundler = "esbuild"
