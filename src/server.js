@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { createCorrespondenceRouter } from './correspondence/routes.js';
 import { createProportionalityRouter } from './proportionality/routes.js';
 import { createCultivationRouter } from './cultivation/routes.js';
+import { createCompensationRouter } from './compensation/routes.js';
 
 dotenv.config();
 
@@ -35,6 +36,9 @@ app.get('/', (_req, res) => {
       '/api/cultivation',
       '/api/cultivation/assess',
       '/api/cultivation/reflect',
+      '/api/compensation',
+      '/api/compensation/assess',
+      '/api/compensation/reflect',
     ]
   });
 });
@@ -119,6 +123,7 @@ Provide:
 app.use('/api/correspondence', createCorrespondenceRouter({ anthropic, model }));
 app.use('/api/proportionality', createProportionalityRouter({ anthropic, model }));
 app.use('/api/cultivation', createCultivationRouter({ anthropic, model }));
+app.use('/api/compensation', createCompensationRouter({ anthropic, model }));
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   app.listen(port, () => {

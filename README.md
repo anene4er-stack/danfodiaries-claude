@@ -35,6 +35,9 @@ Endpoints
 - GET /api/cultivation
 - POST /api/cultivation/assess
 - POST /api/cultivation/reflect
+- GET /api/compensation
+- POST /api/compensation/assess
+- POST /api/compensation/reflect
 
 Example: journal reflection request
 curl -X POST http://localhost:3000/api/journal/reflect \
@@ -196,6 +199,57 @@ curl -X POST http://localhost:3000/api/cultivation/reflect \
   -d '{
     "title": "Sunday",
     "content": "I wrote every morning this week but nobody is reading yet. I have not touched my guitar in months."
+  }'
+
+Law of Compensation ("What you give, you get")
+Built from the notes in the "Law of Compensation" Drive folder. The law is cause and effect applied to
+abundance: the seeds you sow come back as the harvest, as infallibly as gravitation. Its core formula:
+
+    Total Harvest = (Quality of Seed x Volume of Input) x Stewardship Factor
+
+Stewardship is the multiplier: at 0 the harvest is 0 no matter how many seeds you sow, at 1 you get
+exactly what you put in, and above 1 small inputs are protected until they compound.
+
+- `GET /api/compensation` returns the framework: the law, the harvest formula, the Key to Symbols, the
+  Seed and Harvest mechanism, the Dynamics of Flow (Gratitude vs. Bypass), the Volume Mandate, Stewardship
+  and its audit, the Feedback Loop, the 4-Stage Process, the Abundance Cycle, the Mirror Audit and the
+  Shadow. It shares the Terms of Service and the effort/return curve with the Law of Cultivation.
+- `POST /api/compensation/assess` runs the numbers for one cycle (for example, one week) without calling
+  Claude. Send `seedQuality` (1-5), `seedsPerWeek`, `germinating` (how many got a response),
+  `targetHarvests`, `stewardship` (0-5, mapped to a factor of 0, 0.5, 0.75, 1, 1.5 or 2) and
+  `cycleComplete` (has the cycle had time to mature?). It returns:
+  - the harvest index from the formula (relative: compare it cycle to cycle);
+  - the Volume Mandate math: germination rate and how many seeds you need to reach the target
+    (10% germination and 50 harvests means 500 seeds);
+  - the Calibration Protocol verdict: `no-sowing`, `successful` (codify your Golden Seed), `lag-phase`
+    (noise, not signal: do not pivot yet), `zero-stewardship`, `weak-seed` or `insufficient-volume`;
+  - the weekly Diagnostic Audit (Input Quality, Input Volume, Stewardship, The Yield) and recommendations.
+  Optional: `audit` answers the Stewardship Audit (`weedsLowYield`, `reinvestsHarvest`, `governance`:
+  `reacting` or `setting-terms`), and `receivesWithGratitude` checks the Flow.
+- `POST /api/compensation/reflect` asks Claude to read a journal entry through the law: Seed and Harvest,
+  the formula, Noise or Signal, the Mirror Audit (Stop, Trace, Re-Calibrate), the Flow, one recalibration
+  and a reflective question.
+
+Example: assessment
+curl -X POST http://localhost:3000/api/compensation/assess \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "seedQuality": 4,
+    "seedsPerWeek": 20,
+    "germinating": 1,
+    "targetHarvests": 5,
+    "stewardship": 2,
+    "cycleComplete": true,
+    "audit": { "weedsLowYield": true, "reinvestsHarvest": false, "governance": "reacting" },
+    "receivesWithGratitude": true
+  }'
+
+Example: reflection
+curl -X POST http://localhost:3000/api/compensation/reflect \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "Pitches",
+    "content": "I sent 20 pitches this week and only one person replied. I am starting to think nobody wants what I make."
   }'
 
 Tests
