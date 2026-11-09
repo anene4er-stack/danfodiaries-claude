@@ -8,6 +8,7 @@ import { createCultivationRouter } from './cultivation/routes.js';
 import { createCompensationRouter } from './compensation/routes.js';
 import { createReciprocityRouter } from './reciprocity/routes.js';
 import { createRhythmRouter } from './rhythm/routes.js';
+import { createPolarityRouter } from './polarity/routes.js';
 
 dotenv.config();
 
@@ -47,6 +48,9 @@ app.get('/', (_req, res) => {
       '/api/rhythm',
       '/api/rhythm/assess',
       '/api/rhythm/reflect',
+      '/api/polarity',
+      '/api/polarity/assess',
+      '/api/polarity/reflect',
     ]
   });
 });
@@ -134,6 +138,7 @@ app.use('/api/cultivation', createCultivationRouter({ anthropic, model }));
 app.use('/api/compensation', createCompensationRouter({ anthropic, model }));
 app.use('/api/reciprocity', createReciprocityRouter({ anthropic, model }));
 app.use('/api/rhythm', createRhythmRouter({ anthropic, model }));
+app.use('/api/polarity', createPolarityRouter({ anthropic, model }));
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   app.listen(port, () => {

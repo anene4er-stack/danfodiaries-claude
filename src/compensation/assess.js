@@ -1,4 +1,4 @@
-import { ABUNDANCE_CYCLE, FEEDBACK_LOOP, FLOW_STATES, STEWARDSHIP, VOLUME_MANDATE } from './framework.js';
+import { ABUNDANCE_CYCLE, FEEDBACK_LOOP, FLOW_STATES, STEWARDSHIP } from './framework.js';
 
 const MAX_SEEDS = 100000;
 const GOVERNANCE = ['reacting', 'setting-terms'];
@@ -75,7 +75,7 @@ export function calibrate({ quality, seeds, germinating, target, stewardship, cy
     action:
       seedsNeeded === null
         ? 'Nothing germinated yet. Sow 10x the seeds, find the one that got even a single response, and pivot your energy to that type of seed.'
-        : `At your germination rate you need about ${seedsNeeded} seeds per cycle to reach ${target} harvests. ${VOLUME_MANDATE.realityCheck[2].replace('The Mandate: ', '')}`,
+        : `At your germination rate you need about ${seedsNeeded} seeds per cycle to reach ${target} harvests. If germination is low, do not decrease volume: increase it while tightening the feedback loop.`,
   };
 }
 

@@ -44,6 +44,9 @@ Endpoints
 - GET /api/rhythm
 - POST /api/rhythm/assess
 - POST /api/rhythm/reflect
+- GET /api/polarity
+- POST /api/polarity/assess
+- POST /api/polarity/reflect
 
 Example: journal reflection request
 curl -X POST http://localhost:3000/api/journal/reflect \
@@ -346,6 +349,55 @@ curl -X POST http://localhost:3000/api/rhythm/reflect \
   -d '{
     "title": "Quiet month",
     "content": "No new clients for weeks. I keep sending cold emails and thinking about lowering my prices. I feel useless."
+  }'
+
+Law of Polarity ("Everything is on a continuum")
+Built from the Law of Polarity notes: opposites are the same thing at different degrees, so you do not
+destroy a negative state; you move along its scale to the opposite pole. Replace, don't suppress, because
+whatever you focus on, you feed. The notes also cover Selective Attention, Perception as Projection
+(the Mirror Effect) and the language of agency.
+
+The scales from the notes (low pole -> high pole): Anxiety -> Excitement, Fear -> Courage,
+Criticism -> Insight, Scarcity -> Abundance, Separation -> Connection, Shame -> Data,
+Apathy -> Craftsmanship, Impatience -> Preparation, Resistance -> Utilization.
+
+- `GET /api/polarity` returns the framework: the law, the nine scales and how to shift each one, pattern
+  interrupts, the Attentional Budget and its seven leaks with their fixes, the Mirror Effect (Shadow,
+  Golden Shadow, Envy Audit, Lens, the Contribution Question), the language swaps, the agency tools
+  (the stimulus-response gap, the Weather Report, the Observer Self, the Calibration Loop) and the daily
+  checklist.
+- `POST /api/polarity/assess` runs without calling Claude. Send a `scale` and your `position` on it
+  (1 = at the low pole, 5 = at the high pole). Optional:
+  - `attention`: `signalHours`, `noiseHours`, `openLoops` and `leaks` (`notifications`, `task-switching`,
+    `rumination`, `worry`, `social-media`, `news`, `clutter`). You are `leaking` when noise hours match
+    or exceed signal hours.
+  - `mirror`: a `trait` in someone else and your `reaction` (`irritation`, `admiration` or `envy`), plus
+    `pattern` if you react this way to many people (the Lens Effect).
+  - `selfTalk`: text to run the Agency Audit on. It finds phrases like "I have to", "I am stressed",
+    "I'm a failure", "this is a problem" and "is killing me", and suggests the swap from the notes.
+  It returns where you are on the scale, the attention audit, the mirror reading, the language findings,
+  recommendations and the daily checklist.
+- `POST /api/polarity/reflect` asks Claude to read a journal entry through the law: the pole, the
+  frequency, the mirror, attention leaks, the shift, one pattern interrupt and a reflective question. The
+  prompt tells Claude that a reframe is never a substitute for support when an entry describes a crisis.
+
+Example: assessment
+curl -X POST http://localhost:3000/api/polarity/assess \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "scale": "anxiety-excitement",
+    "position": 2,
+    "attention": { "signalHours": 3, "noiseHours": 4, "openLoops": 5, "leaks": ["notifications"] },
+    "mirror": { "trait": "confidence", "reaction": "admiration" },
+    "selfTalk": "I have to give this talk and I am so nervous."
+  }'
+
+Example: reflection
+curl -X POST http://localhost:3000/api/polarity/reflect \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "Before the talk",
+    "content": "My presentation is tomorrow and my heart is racing. Everyone else on the panel seems so confident."
   }'
 
 Tests
