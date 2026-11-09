@@ -41,6 +41,9 @@ Endpoints
 - GET /api/reciprocity
 - POST /api/reciprocity/assess
 - POST /api/reciprocity/reflect
+- GET /api/rhythm
+- POST /api/rhythm/assess
+- POST /api/rhythm/reflect
 
 Example: journal reflection request
 curl -X POST http://localhost:3000/api/journal/reflect \
@@ -294,6 +297,55 @@ curl -X POST http://localhost:3000/api/reciprocity/reflect \
   -d '{
     "title": "Team meeting",
     "content": "Nobody on my team volunteered for the new project. I always have to push them. I cannot remember the last time I thanked them for anything."
+  }'
+
+Law of Rhythm ("This too shall pass")
+Built from the Law of Rhythm notes: everything moves in cycles, and any structure that rises must fall.
+The Master aligns with the season and keeps their internal Frequency steady.
+
+| Season | Stage | Aligned focus | Trap |
+| --- | --- | --- | --- |
+| Peak | Maximum Potential Energy | Stewardship | Growth Addiction |
+| Descending | Harvest and Consolidation | Consolidation | The Force Trap |
+| Valley | Foundation and Regeneration | Restoration | The Guilt Loop |
+| Ascending | Initialization and Planting | Experimentation | The Haste Trap |
+
+- `GET /api/rhythm` returns the framework: the law and its mantras, each season (markers, objectives,
+  trap, Frequency drift and anchor, master thought, success metrics, checklist), the Attachment,
+  Awareness and Alignment strategies, the Frequency Guards, Rhythm Mastery and the daily practice cards.
+- `POST /api/rhythm/assess` locates you in the cycle without calling Claude.
+  - Name your `season`, or send `signals` (`momentum` 1-5 and `trend`: `rising`, `steady` or `falling`)
+    to have it diagnosed. Medium momentum holding steady sits between seasons, so you are asked to name it.
+  - `activity` is what you are doing: `executing`, `consolidating`, `restoring`, `experimenting` or
+    `pushing` (forcing results, launching all-in). Alignment is `aligned`, `trap` (pushing falls into the
+    season's trap), `overreaching` (burnout risk), `under-using` (missed opportunity) or `mismatched`.
+  - Optional: `frequency` (`actingFromValues` 1-5, `keptRoutine`) checks for Frequency Drift;
+    `attachments` (`name`, `trend`: `rising`, `stable` or `falling`, `wouldCollapseWithIt`) runs the
+    Falling Structure Test; `monthsInSeason` suggests a Forced Valley or Forced Peak after 3 months.
+  - Returns the season, alignment, frequency, attachments, recommendations and the daily practice cards.
+- `POST /api/rhythm/reflect` asks Claude to read a journal entry through the law: the season, with or
+  against the tide, Frequency, attachments, the master thought, one seasonal action and a reflective question.
+
+Example: assessment
+curl -X POST http://localhost:3000/api/rhythm/assess \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "signals": { "momentum": 4, "trend": "falling" },
+    "activity": "pushing",
+    "frequency": { "actingFromValues": 3, "keptRoutine": true },
+    "attachments": [
+      { "name": "Side project", "trend": "falling", "wouldCollapseWithIt": false },
+      { "name": "Writing group", "trend": "rising" }
+    ],
+    "monthsInSeason": 2
+  }'
+
+Example: reflection
+curl -X POST http://localhost:3000/api/rhythm/reflect \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "Quiet month",
+    "content": "No new clients for weeks. I keep sending cold emails and thinking about lowering my prices. I feel useless."
   }'
 
 Tests

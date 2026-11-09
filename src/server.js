@@ -7,6 +7,7 @@ import { createProportionalityRouter } from './proportionality/routes.js';
 import { createCultivationRouter } from './cultivation/routes.js';
 import { createCompensationRouter } from './compensation/routes.js';
 import { createReciprocityRouter } from './reciprocity/routes.js';
+import { createRhythmRouter } from './rhythm/routes.js';
 
 dotenv.config();
 
@@ -43,6 +44,9 @@ app.get('/', (_req, res) => {
       '/api/reciprocity',
       '/api/reciprocity/assess',
       '/api/reciprocity/reflect',
+      '/api/rhythm',
+      '/api/rhythm/assess',
+      '/api/rhythm/reflect',
     ]
   });
 });
@@ -129,6 +133,7 @@ app.use('/api/proportionality', createProportionalityRouter({ anthropic, model }
 app.use('/api/cultivation', createCultivationRouter({ anthropic, model }));
 app.use('/api/compensation', createCompensationRouter({ anthropic, model }));
 app.use('/api/reciprocity', createReciprocityRouter({ anthropic, model }));
+app.use('/api/rhythm', createRhythmRouter({ anthropic, model }));
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   app.listen(port, () => {
