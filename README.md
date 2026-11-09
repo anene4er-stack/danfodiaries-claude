@@ -38,6 +38,9 @@ Endpoints
 - GET /api/compensation
 - POST /api/compensation/assess
 - POST /api/compensation/reflect
+- GET /api/reciprocity
+- POST /api/reciprocity/assess
+- POST /api/reciprocity/reflect
 
 Example: journal reflection request
 curl -X POST http://localhost:3000/api/journal/reflect \
@@ -250,6 +253,47 @@ curl -X POST http://localhost:3000/api/compensation/reflect \
   -d '{
     "title": "Pitches",
     "content": "I sent 20 pitches this week and only one person replied. I am starting to think nobody wants what I make."
+  }'
+
+Law of Reciprocity ("The same measure you use is the measure returned to you")
+There is no single Reciprocity note in Drive, so this is built from the sections on it inside other notes:
+the Law of Reciprocity (Leadership & Human Exchange) in the Law of Cultivation guide, the Unified Theory of
+Universal Reciprocity, the Mirror Principle, and Reciprocity in the Law of Rhythm Peak notes. Where the
+Law of Compensation is about your work, this law is about your relationships and the people you lead:
+"You get what you pay for." The reward you offer sets the effort you receive.
+
+- `GET /api/reciprocity` returns the framework: the law, the Quality Feedback Loop, the three things you
+  offer others (Environment, Appreciation, Resources), the Mirror (including Audit the Measure), the Flow
+  (shared with the Law of Compensation) and Goodwill at the Peak.
+- `POST /api/reciprocity/assess` audits up to 20 relationships without calling Claude. For each, rate what
+  you `offered` (`environment`, `appreciation`, `resources`, 1-5) and what you `received` back (1-5).
+  Optional per relationship: `measureMatches` (would you accept the measure you use on them?) and
+  `gratitude` (do you acknowledge what they give?). Optional overall: `inPeak`.
+  Each relationship is classified as `good-measure`, `balanced`, `sloppy-reward` (low reward, low effort),
+  `overdrawn` (they give far more than you offer) or `unreturned` (you give far more than comes back).
+  The Mirror reports your average offer vs. return, and flags a pattern when the same offer is your
+  lowest in most relationships, since the common factor is what you bring.
+- `POST /api/reciprocity/reflect` asks Claude to read a journal entry through the law: the exchange, the
+  reward offered, the Mirror, Audit the Measure, the Flow, one generous seed and a reflective question.
+
+Example: assessment
+curl -X POST http://localhost:3000/api/reciprocity/assess \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "relationships": [
+      { "name": "Team", "offered": { "environment": 4, "appreciation": 2, "resources": 3 }, "received": 2 },
+      { "name": "Partner", "offered": { "environment": 4, "appreciation": 2, "resources": 5 }, "received": 3, "gratitude": false },
+      { "name": "Mentor", "offered": { "environment": 3, "appreciation": 3, "resources": 2 }, "received": 5, "measureMatches": true }
+    ],
+    "inPeak": true
+  }'
+
+Example: reflection
+curl -X POST http://localhost:3000/api/reciprocity/reflect \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "Team meeting",
+    "content": "Nobody on my team volunteered for the new project. I always have to push them. I cannot remember the last time I thanked them for anything."
   }'
 
 Tests
