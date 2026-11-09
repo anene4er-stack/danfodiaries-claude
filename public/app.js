@@ -463,7 +463,7 @@ async function showLaw(id) {
       const r = await api(`/api/${law.id}/reflect`, { title: title.value || undefined, content: entry.value });
       reflectOut.replaceChildren(h('div', { class: 'result card reflection' }, h('h3', {}, r.title), markdown(r.reflection)));
     } catch (err) {
-      const keyProblem = /api[_ -]?key|auth|401|x-api-key/i.test(err.message);
+      const keyProblem = /401|authentication_error|invalid x-api-key/i.test(err.message);
       reflectOut.replaceChildren(h('p', { class: 'error' },
         keyProblem ? `Claude could not be reached: ${err.message} Add ANTHROPIC_API_KEY to .env and restart the server.` : err.message));
     } finally {

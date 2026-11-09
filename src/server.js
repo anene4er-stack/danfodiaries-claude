@@ -134,6 +134,15 @@ Provide:
   }
 });
 
+// Reflections call Claude. Without a key (e.g. a hosted site that only offers
+// assessments), answer every reflect request with a clear message instead of an error.
+app.post('/api/:law/reflect', (_req, res, next) => {
+  if (process.env.ANTHROPIC_API_KEY) return next();
+  res.status(503).json({
+    error: 'Reflections are not set up on this site yet: no Anthropic API key is configured. Assessments still work.',
+  });
+});
+
 app.use('/api/correspondence', createCorrespondenceRouter({ anthropic, model }));
 app.use('/api/proportionality', createProportionalityRouter({ anthropic, model }));
 app.use('/api/cultivation', createCultivationRouter({ anthropic, model }));
