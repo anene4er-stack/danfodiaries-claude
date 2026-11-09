@@ -13,6 +13,7 @@ import { createPolarityRouter } from './polarity/routes.js';
 dotenv.config();
 
 export const app = express();
+const publicDir = fileURLToPath(new URL('../public', import.meta.url));
 const port = Number(process.env.PORT || 3000);
 const model = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 const anthropic = new Anthropic({
@@ -20,8 +21,9 @@ const anthropic = new Anthropic({
 });
 
 app.use(express.json());
+app.use(express.static(publicDir));
 
-app.get('/', (_req, res) => {
+app.get('/api', (_req, res) => {
   res.json({
     name: 'DanfoDiaries Claude API',
     status: 'ok',

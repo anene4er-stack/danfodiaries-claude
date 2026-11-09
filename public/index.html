@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DanfoDiaries · The Laws</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <h1>DanfoDiaries</h1>
+    <p class="tagline">Seven laws for reading your life and work. Run an assessment, or reflect on a journal entry.</p>
+    <nav id="tabs" role="tablist" aria-label="Laws"></nav>
+  </header>
+
+  <main id="law">
+    <p class="loading">Loading…</p>
+  </main>
+
+  <footer>
+    Assessments run on this server without calling Claude. Reflections send your journal entry to Claude
+    and need <code>ANTHROPIC_API_KEY</code> in <code>.env</code>.
+  </footer>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
