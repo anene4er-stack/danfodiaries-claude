@@ -1,11 +1,14 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import Anthropic from '@anthropic-ai/sdk';
+import { fileURLToPath } from 'node:url';
+import { createCorrespondenceRouter } from './correspondence/routes.js';
 
 dotenv.config();
 
-const app = express();
+export const app = express();
 const port = Number(process.env.PORT || 3000);
+const model = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
@@ -16,7 +19,15 @@ app.get('/', (_req, res) => {
   res.json({
     name: 'DanfoDiaries Claude API',
     status: 'ok',
-    endpoints: ['/health', '/api/journal/reflect', '/api/chat']
+    endpoints: [
+      '/health',
+      '/api/journal/reflect',
+      '/api/chat',
+      '/api/correspondence',
+      '/api/correspondence/systems/:id',
+      '/api/correspondence/assess',
+      '/api/correspondence/reflect',
+    ]
   });
 });
 
@@ -33,7 +44,7 @@ app.post('/api/chat', async (req, res) => {
 
   try {
     const response = await anthropic.messages.create({
-      model: process.env.CLAUDE_MODEL || 'claude-3-5-sonnet-20241022',
+      model,
       max_tokens: 500,
       temperature: 0.4,
       system: systemPrompt || 'You are a helpful writing assistant for DanfoDiaries.',
@@ -75,7 +86,7 @@ Provide:
 `;
 
     const response = await anthropic.messages.create({
-      model: process.env.CLAUDE_MODEL || 'claude-3-5-sonnet-20241022',
+      model,
       max_tokens: 700,
       temperature: 0.5,
       messages: [{ role: 'user', content: prompt }],
@@ -97,6 +108,10 @@ Provide:
   }
 });
 
-app.listen(port, () => {
-  console.log(`DanfoDiaries Claude app listening on http://localhost:${port}`);
-});
+app.use('/api/correspondence', createCorrespondenceRouter({ anthropic, model }));
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  app.listen(port, () => {
+    console.log(`DanfoDiaries Claude app listening on http://localhost:${port}`);
+  });
+}

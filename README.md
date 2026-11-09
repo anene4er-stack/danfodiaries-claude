@@ -25,6 +25,10 @@ Endpoints
 - GET /
 - POST /api/chat
 - POST /api/journal/reflect
+- GET /api/correspondence
+- GET /api/correspondence/systems/:id
+- POST /api/correspondence/assess
+- POST /api/correspondence/reflect
 
 Example: journal reflection request
 curl -X POST http://localhost:3000/api/journal/reflect \
@@ -44,6 +48,56 @@ curl -X POST http://localhost:3000/api/chat \
   }'
 
 Notes
-- The app uses the Anthropic Messages API and supports `claude-3-5-sonnet-20241022` by default.
+- The app uses the Anthropic Messages API and uses `claude-sonnet-5-5` by default.
 - You can change the model in `.env` with `CLAUDE_MODEL`.
 - For production, add auth, rate limiting, and request validation.
+
+Law of Correspondence ("As above, so below")
+This feature is built from the "System of Correspondence" design doc and the notes on "The Below".
+Each principle in the higher plane (the Above) has a matching process in the lower plane (the Below):
+
+| Level | Above (principle) | Below (process) |
+| --- | --- | --- |
+| 1 | Culture | Leadership |
+| 2 | Standards | Implement |
+| 3 | Indoc | Training |
+| 4 | Upkeep | Re-iterate |
+
+A second system, `nature` ("Nature to Self"), maps Ecology -> Synergy, Seasonality -> Project Cycles,
+Growth -> Development and Balance -> Balanced Scorecard.
+
+- `GET /api/correspondence` returns the full framework: the law, both systems, the properties of a
+  robust Below, the health checklist (Coherence, Resilience, Transparency) and the practices
+  (The Reset, the Gemba Walk, Direct Reporting).
+- `POST /api/correspondence/assess` scores alignment without calling Claude. For each level, rate
+  `above` (how clearly the principle is defined) and `below` (how consistently it is practiced) from 1 to 5.
+  Each level is classified as `aligned`, `drift` (Below lags Above), `unanchored` (practice without a
+  defined principle) or `weak` (both low), and the response includes recommendations.
+- `POST /api/correspondence/reflect` asks Claude to read a journal entry through the law: the Below,
+  the Above, the correspondences, the drift, one Reset action and a reflective question.
+
+Example: assessment
+curl -X POST http://localhost:3000/api/correspondence/assess \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "system": "organization",
+    "levels": {
+      "culture":   { "above": 5, "below": 4 },
+      "standards": { "above": 5, "below": 2 },
+      "indoc":     { "above": 3, "below": 3 },
+      "upkeep":    { "above": 2, "below": 4 }
+    },
+    "checklist": { "coherence": 3, "resilience": 4, "transparency": 2 }
+  }'
+
+Example: reflection
+curl -X POST http://localhost:3000/api/correspondence/reflect \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "Monday",
+    "content": "I say my health matters, but I skipped the gym again and ate at my desk.",
+    "system": "nature"
+  }'
+
+Tests
+npm test
