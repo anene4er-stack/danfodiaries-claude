@@ -140,7 +140,7 @@ function runNexusQuestions(tests, { depth, field }) {
       passed: bottleneck === 'none',
       note:
         bottleneck === 'scale'
-          ? byId.bottleneck.failMeans
+          ? 'You are farming one tiny patch of land: your problem is not skill; it is scale.'
           : bottleneck === 'skill'
             ? 'The seed itself needs work before the field size matters.'
             : 'Neither the seed nor the field is the constraint right now.',
@@ -159,7 +159,9 @@ function runNexusQuestions(tests, { depth, field }) {
       question: byId.leverage.question,
       answer: tests.activeOnlyWhenAwake ? 'yes' : 'no',
       passed: !tests.activeOnlyWhenAwake,
-      note: tests.activeOnlyWhenAwake ? byId.leverage.failMeans : 'Your seed works while you rest.',
+      note: tests.activeOnlyWhenAwake
+        ? 'Your seed is active only while you are awake, so your surface area is limited by your biology.'
+        : 'Your seed works while you rest.',
     });
   }
 
@@ -175,7 +177,7 @@ function runNexusQuestions(tests, { depth, field }) {
       answer: tests.primarySourceLoss,
       passed: tests.primarySourceLoss === 'minor-setback',
       note: collapse
-        ? byId.diversification.failMeans
+        ? 'Losing your primary source would mean total collapse, so your surface area is zero.'
         : tests.primarySourceLoss === 'major-setback'
           ? 'You would survive, but one source carries too much of the harvest.'
           : 'A storm in one field would be an anomaly, not a catastrophe.',
