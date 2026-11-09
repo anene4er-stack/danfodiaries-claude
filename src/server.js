@@ -3,6 +3,7 @@ import express from 'express';
 import Anthropic from '@anthropic-ai/sdk';
 import { fileURLToPath } from 'node:url';
 import { createCorrespondenceRouter } from './correspondence/routes.js';
+import { createProportionalityRouter } from './proportionality/routes.js';
 
 dotenv.config();
 
@@ -27,6 +28,9 @@ app.get('/', (_req, res) => {
       '/api/correspondence/systems/:id',
       '/api/correspondence/assess',
       '/api/correspondence/reflect',
+      '/api/proportionality',
+      '/api/proportionality/assess',
+      '/api/proportionality/reflect',
     ]
   });
 });
@@ -109,6 +113,7 @@ Provide:
 });
 
 app.use('/api/correspondence', createCorrespondenceRouter({ anthropic, model }));
+app.use('/api/proportionality', createProportionalityRouter({ anthropic, model }));
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   app.listen(port, () => {

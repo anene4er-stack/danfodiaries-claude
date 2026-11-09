@@ -29,6 +29,9 @@ Endpoints
 - GET /api/correspondence/systems/:id
 - POST /api/correspondence/assess
 - POST /api/correspondence/reflect
+- GET /api/proportionality
+- POST /api/proportionality/assess
+- POST /api/proportionality/reflect
 
 Example: journal reflection request
 curl -X POST http://localhost:3000/api/journal/reflect \
@@ -97,6 +100,49 @@ curl -X POST http://localhost:3000/api/correspondence/reflect \
     "title": "Monday",
     "content": "I say my health matters, but I skipped the gym again and ate at my desk.",
     "system": "nature"
+  }'
+
+Law of Proportionality ("The volume of the harvest is determined by the scale of the seed")
+Built from the Law of Proportionality notes: the move from Linear Effort (the Spear) to Systemic Scale
+(the Net). If the harvest is consistently small, the bottleneck is the size of the field, not your work ethic.
+
+Input Surface Area has three dimensions:
+
+| Dimension | Definition | How to increase |
+| --- | --- | --- |
+| Reach | People, markets or problems exposed to your Seed | Repeatable content, networks, distribution platforms |
+| Diversity | Different types of Seeds planted at once | A stack of assets, not one skill |
+| Availability | How long your Seeds stay active | Move from synchronous to asynchronous work |
+
+- `GET /api/proportionality` returns the framework: the law, the Spear and the Net, the three dimensions,
+  the benefits of surface area, the "Wide and Shallow" trap, the workflow (Validate the Seed, Systematize
+  the Sowing, Audit the Nexus) and the three Nexus Questions.
+- `POST /api/proportionality/assess` scores your field without calling Claude. Rate `depth` (seed quality),
+  `nexus` (core intent), `reach`, `diversity` and `availability` from 1 to 5. Surface area is
+  Reach x Diversity x Availability as a percentage, so one weak dimension shrinks the whole field.
+  The diagnosis follows the workflow order (do not scale garbage):
+  `wide-and-shallow`, `validate-seed`, `spear`, `nexus-at-risk`, `widening` or `net`.
+  Optional `tests` answer the Leverage Test (`activeOnlyWhenAwake`: true/false) and the Diversification Test
+  (`primarySourceLoss`: `total-collapse`, `major-setback` or `minor-setback`); the Bottleneck Test is
+  answered from the ratings.
+- `POST /api/proportionality/reflect` asks Claude to read a journal entry through the law: Spear or Net,
+  the Seed, the three dimensions, the Nexus Questions, one step to widen the field and a reflective question.
+
+Example: assessment
+curl -X POST http://localhost:3000/api/proportionality/assess \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "depth": 5, "nexus": 4,
+    "reach": 2, "diversity": 3, "availability": 2,
+    "tests": { "activeOnlyWhenAwake": true, "primarySourceLoss": "total-collapse" }
+  }'
+
+Example: reflection
+curl -X POST http://localhost:3000/api/proportionality/reflect \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "Cake orders",
+    "content": "My cakes sell out every Sunday, but I only sell to friends at church and I bake every order myself."
   }'
 
 Tests
