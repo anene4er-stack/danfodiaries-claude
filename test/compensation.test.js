@@ -30,6 +30,7 @@ test('the Volume Mandate math from the notes: 10% germination and 50 harvests ne
   assert.equal(r.harvest.index, 400);
   assert.equal(r.calibration.id, 'insufficient-volume');
   assert.match(r.calibration.action, /about 500 seeds/);
+  assert.match(r.calibration.action, /harvests\. If germination is low/);
 });
 
 test('calibration order: no sowing, success, lag phase, zero stewardship, weak seed', () => {
