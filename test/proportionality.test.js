@@ -39,6 +39,8 @@ test('a strong seed on a small field is a scale problem, not a skill problem', (
   assert.equal(tests.bottleneck.answer, 'scale');
   assert.equal(tests.leverage.passed, false);
   assert.match(tests.diversification.note, /surface area is zero/);
+  assert.match(tests.leverage.note, /^Your seed is active only while you are awake/);
+  assert.match(tests.bottleneck.note, /^You are farming one tiny patch/);
   assert.deepEqual(r.recommendations.map((x) => x.step), [
     'Systematize the Sowing (Surface Area): Reach',
     'Systematize the Sowing (Surface Area): Availability',

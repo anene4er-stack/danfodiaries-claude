@@ -20,9 +20,15 @@ Quick start
    or use development mode:
    npm run dev
 
+Web page
+Run `npm start` and open http://localhost:3000 in your browser. There is a tab for each law. Each tab
+has an assessment form, pre-filled with an example so you can run it straight away, and a reflection
+box where Claude reads a journal entry through that law. Results are shown as readable text, with the
+full JSON underneath. Reflections need `ANTHROPIC_API_KEY` in `.env`.
+
 Endpoints
 - GET /health
-- GET /
+- GET /api (lists the endpoints; the web page is served at /)
 - POST /api/chat
 - POST /api/journal/reflect
 - GET /api/correspondence
