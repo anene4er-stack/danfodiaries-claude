@@ -32,6 +32,9 @@ Endpoints
 - GET /api/proportionality
 - POST /api/proportionality/assess
 - POST /api/proportionality/reflect
+- GET /api/cultivation
+- POST /api/cultivation/assess
+- POST /api/cultivation/reflect
 
 Example: journal reflection request
 curl -X POST http://localhost:3000/api/journal/reflect \
@@ -143,6 +146,56 @@ curl -X POST http://localhost:3000/api/proportionality/reflect \
   -d '{
     "title": "Cake orders",
     "content": "My cakes sell out every Sunday, but I only sell to friends at church and I bake every order myself."
+  }'
+
+Law of Cultivation ("Whatever you don't cultivate, you will lose")
+Built from the Law of Cultivation notes: work is the only currency that produces a yield, and a gift
+left "in a box" loses its value. The flow is Task -> Effort -> Compensation -> Reward, where effort is
+the multiplier: a "+" effort amplifies the reward and a "-" effort reduces it.
+
+Each field (a talent, relationship or project) is on one of three paths:
+
+| Effort | Path | Result |
+| --- | --- | --- |
+| `cultivate` | The Diligent Path | Good Reward, moving through Incubation -> Transition -> Harvest |
+| `neglect` | The Slothful Path | Bad Reward: the field is "in a box" |
+| `shortcut` | The Extractionist Path | Task without work: the Ownership Clause reclaims the reward |
+
+- `GET /api/cultivation` returns the framework: the axiom, the flow, the three paths, Extractionist vs.
+  Cultivator, the Terms of Service (Proportionality, Non-Delegation, Lag-Time, Ownership), the
+  Cultivation Cycle, the Reception Protocol, the force multipliers (Leverage, Reinvestment levels,
+  the Nexus Audit) and Reciprocity.
+- `POST /api/cultivation/assess` audits your fields without calling Claude. Send 1 to 20 `fields`, each
+  with a `name`, an `effort` and, for cultivated fields, `returns` (`none`, `growing` or `massive`), which
+  places it in the Cultivation Cycle. Optional inputs:
+  `reinvestment` (`consume`, `seeds` or `soil`: Levels 1-3), `containerBreaksAt10x` (true/false: the
+  Reception audit) and `leverage` (any of `technology`, `people`, `content`).
+  The response gives your cultivation rate, a profile (`cultivator`, `cultivator-with-boxes`,
+  `steward-at-risk` or `extractionist`), each field's state, your boxes and recommendations.
+- `POST /api/cultivation/reflect` asks Claude to read a journal entry through the law: the fields, the
+  effort sign, the cycle phase, the most relevant Term of Service, one unit of cultivation for today and
+  a reflective question.
+
+Example: assessment
+curl -X POST http://localhost:3000/api/cultivation/assess \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "fields": [
+      { "name": "Writing", "effort": "cultivate", "returns": "none" },
+      { "name": "Guitar", "effort": "neglect" },
+      { "name": "Family", "effort": "cultivate", "returns": "massive" }
+    ],
+    "reinvestment": "consume",
+    "containerBreaksAt10x": true,
+    "leverage": []
+  }'
+
+Example: reflection
+curl -X POST http://localhost:3000/api/cultivation/reflect \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "Sunday",
+    "content": "I wrote every morning this week but nobody is reading yet. I have not touched my guitar in months."
   }'
 
 Tests
