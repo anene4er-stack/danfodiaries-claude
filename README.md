@@ -67,14 +67,18 @@ Example: chat request
 curl -X POST http://localhost:3000/api/chat \
   -H 'Content-Type: application/json' \
   -d '{
-    "message": "Help me write a short, encouraging journal conclusion for today.",
-    "systemPrompt": "You are a supportive journaling assistant for DanfoDiaries."
+    "message": "Help me write a short, encouraging journal conclusion for today."
   }'
 
 Notes
 - The app uses the Anthropic Messages API and uses `claude-sonnet-5-5` by default.
 - You can change the model in `.env` with `CLAUDE_MODEL`.
-- For production, add auth, rate limiting, and request validation.
+- Security: chat instructions are fixed on the server (a client `systemPrompt` is ignored), request bodies are
+  limited to 32kb, journal text is capped at 8000 characters, endpoints that call Claude allow 10 requests per
+  minute per visitor, and errors from the AI provider are never shown to callers. The rate limit is held in
+  memory per server instance, so it is best effort until accounts and a shared store are added.
+- Still needed before storing private journals: user accounts (planned with Supabase Auth), shared usage quotas,
+  and monitoring.
 
 Law of Correspondence ("As above, so below")
 This feature is built from the "System of Correspondence" design doc and the notes on "The Below".

@@ -9,6 +9,10 @@ import { createCompensationRouter } from './compensation/routes.js';
 import { createReciprocityRouter } from './reciprocity/routes.js';
 import { createRhythmRouter } from './rhythm/routes.js';
 import { createPolarityRouter } from './polarity/routes.js';
+import {
+  MAX_BODY, MAX_CHAT_CHARS, CHAT_SYSTEM_PROMPT, checkLengths, sendSafeError,
+  createRateLimiter, securityHeaders, errorHandler,
+} from './security.js';
 
 dotenv.config();
 
@@ -16,11 +20,31 @@ export const app = express();
 const publicDir = fileURLToPath(new URL('../public', import.meta.url));
 const port = Number(process.env.PORT || 3000);
 const model = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
 
-app.use(express.json());
+// The Anthropic client is created on first use, so a missing key never breaks
+// startup or the assessments. Routes are given this wrapper instead of a client.
+let client = null;
+export const anthropic = {
+  messages: {
+    create: (...args) => {
+      if (!client) client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      return client.messages.create(...args);
+    },
+  },
+};
+
+// Anything that calls Claude is limited per visitor.
+const aiLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
+const requireKey = (_req, res, next) => {
+  if (process.env.ANTHROPIC_API_KEY) return next();
+  res.status(503).json({
+    error: 'Reflections are not set up on this site yet: no Anthropic API key is configured. Assessments still work.',
+  });
+};
+
+app.disable('x-powered-by');
+app.use(securityHeaders);
+app.use(express.json({ limit: MAX_BODY }));
 app.use(express.static(publicDir));
 
 app.get('/api', (_req, res) => {
@@ -61,11 +85,14 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'danfodiaries-claude' });
 });
 
-app.post('/api/chat', async (req, res) => {
-  const { message, systemPrompt } = req.body || {};
+app.post('/api/chat', aiLimiter, requireKey, async (req, res) => {
+  const { message } = req.body || {};
 
-  if (!message || !String(message).trim()) {
+  if (typeof message !== 'string' || !message.trim()) {
     return res.status(400).json({ error: 'Message is required.' });
+  }
+  if (message.length > MAX_CHAT_CHARS) {
+    return res.status(400).json({ error: `Message must be ${MAX_CHAT_CHARS} characters or fewer.` });
   }
 
   try {
@@ -73,8 +100,8 @@ app.post('/api/chat', async (req, res) => {
       model,
       max_tokens: 500,
       temperature: 0.4,
-      system: systemPrompt || 'You are a helpful writing assistant for DanfoDiaries.',
-      messages: [{ role: 'user', content: String(message).trim() }],
+      system: CHAT_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: message.trim() }],
     });
 
     const text = response.content
@@ -82,18 +109,22 @@ app.post('/api/chat', async (req, res) => {
       .join('\n')
       .trim();
 
-    res.json({ reply: text || 'No response returned.', raw: response });
+    res.json({ reply: text || 'No response returned.' });
   } catch (error) {
-    const messageText = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ error: messageText });
+    sendSafeError(res, error);
   }
 });
 
-app.post('/api/journal/reflect', async (req, res) => {
+app.post('/api/journal/reflect', aiLimiter, requireKey, async (req, res) => {
   const { title, content, mood = 'neutral' } = req.body || {};
 
   if (!content || !String(content).trim()) {
     return res.status(400).json({ error: 'Journal content is required.' });
+  }
+  const lengthError = checkLengths({ title, content });
+  if (lengthError) return res.status(400).json({ error: lengthError });
+  if (typeof mood !== 'string' || mood.length > 30) {
+    return res.status(400).json({ error: 'Mood must be a short text value.' });
   }
 
   try {
@@ -129,19 +160,13 @@ Provide:
       reflection: reflection || 'No reflection returned.'
     });
   } catch (error) {
-    const messageText = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ error: messageText });
+    sendSafeError(res, error);
   }
 });
 
 // Reflections call Claude. Without a key (e.g. a hosted site that only offers
 // assessments), answer every reflect request with a clear message instead of an error.
-app.post('/api/:law/reflect', (_req, res, next) => {
-  if (process.env.ANTHROPIC_API_KEY) return next();
-  res.status(503).json({
-    error: 'Reflections are not set up on this site yet: no Anthropic API key is configured. Assessments still work.',
-  });
-});
+app.post('/api/:law/reflect', aiLimiter, requireKey);
 
 app.use('/api/correspondence', createCorrespondenceRouter({ anthropic, model }));
 app.use('/api/proportionality', createProportionalityRouter({ anthropic, model }));
@@ -150,6 +175,8 @@ app.use('/api/compensation', createCompensationRouter({ anthropic, model }));
 app.use('/api/reciprocity', createReciprocityRouter({ anthropic, model }));
 app.use('/api/rhythm', createRhythmRouter({ anthropic, model }));
 app.use('/api/polarity', createPolarityRouter({ anthropic, model }));
+
+app.use(errorHandler);
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   app.listen(port, () => {
