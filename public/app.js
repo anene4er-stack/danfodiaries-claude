@@ -414,6 +414,40 @@ function markdown(md) {
   return out;
 }
 
+// ---------- About ----------
+
+const ABOUT_LAWS = [
+  ['correspondence', 'Correspondence', 'As above, so below.', 'Whether what you say you stand for (culture, standards, training, upkeep) matches what you actually practise, and where they drift apart.'],
+  ['proportionality', 'Proportionality', 'The harvest matches the scale of the seed.', 'How much “surface area” your work has (reach × diversity × availability), and whether you are a spear, a net, or spread wide and shallow.'],
+  ['cultivation', 'Cultivation', 'Whatever you don’t cultivate, you will lose.', 'Which areas of your life you are tending, neglecting or shortcutting, and whether you reinvest what they return.'],
+  ['compensation', 'Compensation', 'What you give, you get.', 'Your harvest as quality × volume × stewardship, how many more “seeds” you need to hit your target, and why results are lagging.'],
+  ['reciprocity', 'Reciprocity', 'The measure you use is returned to you.', 'Relationship by relationship: whether you give more than you get back, or the reverse, and whether you keep holding back the same thing.'],
+  ['rhythm', 'Rhythm', 'This too shall pass.', 'Which season you are in (peak, descending, valley, ascending), and whether what you are doing fits that season.'],
+  ['polarity', 'Polarity', 'Everything is on a continuum.', 'Where you sit between two poles (such as anxiety and excitement), whether your attention is leaking, and how to reword negative self-talk.'],
+];
+
+function showAbout() {
+  const main = document.getElementById('law');
+  main.replaceChildren(
+    h('h2', {}, 'About DanfoDiaries'),
+    h('p', {}, 'Seven laws for reading your life and work. Each law turns a set of ideas into a self-check you can fill in. Pick a law below, or use the tabs above.'),
+    h('section', { class: 'card' },
+      h('h3', {}, 'Two things on every tab'),
+      h('ol', {},
+        h('li', {}, h('strong', {}, 'Assessment. '), 'Answer a short form, mostly 1–5 ratings and a few choices. The page scores your answers with fixed rules and returns a diagnosis plus numbered recommendations, each with a reason and an action. This does not use Claude, so it gives the same answer every time.'),
+        h('li', {}, h('strong', {}, 'Reflection. '), 'Paste a journal entry and Claude reads it through the lens of that law. This only works where an Anthropic API key is set up; otherwise you will see a message saying so.'),
+      ),
+    ),
+    h('section', { class: 'card' },
+      h('h3', {}, 'The seven laws'),
+      h('dl', { class: 'about-laws' }, ABOUT_LAWS.map(([id, name, maxim, what]) => [
+        h('dt', {}, h('a', { href: `#${id}` }, `Law of ${name}`), ' ', h('span', { class: 'maxim' }, `“${maxim}”`)),
+        h('dd', {}, what),
+      ])),
+    ),
+  );
+}
+
 // ---------- Page ----------
 
 const frameworks = {};
@@ -485,10 +519,16 @@ function init() {
     correspondence: 'Correspondence', proportionality: 'Proportionality', cultivation: 'Cultivation',
     compensation: 'Compensation', reciprocity: 'Reciprocity', rhythm: 'Rhythm', polarity: 'Polarity',
   };
+  tabs.append(h('button', { type: 'button', role: 'tab', 'data-id': 'about', onclick: () => { location.hash = 'about'; } }, 'About'));
   for (const law of LAWS) {
     tabs.append(h('button', { type: 'button', role: 'tab', 'data-id': law.id, onclick: () => { location.hash = law.id; } }, names[law.id]));
   }
-  const route = () => showLaw(location.hash.slice(1));
+  const route = () => {
+    const id = location.hash.slice(1);
+    if (id && id !== 'about' && LAWS.some((l) => l.id === id)) return showLaw(id);
+    document.querySelectorAll('#tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.id === 'about')));
+    showAbout();
+  };
   window.addEventListener('hashchange', route);
   route();
 }

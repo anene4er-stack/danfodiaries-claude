@@ -28,7 +28,7 @@ full JSON underneath. Reflections need `ANTHROPIC_API_KEY` in `.env`.
 
 Endpoints
 - GET /health
-- GET /api (lists the endpoints; the web page is served at /)
+- GET /api (lists the endpoints; the web page is served at /, and opens on an About tab that explains each law)
 - POST /api/chat
 - POST /api/journal/reflect
 - GET /api/correspondence
