@@ -87,3 +87,7 @@ summary { cursor: pointer; color: var(--muted); }
 pre { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; overflow-x: auto; font-size: .82rem; }
 .reflection h3, .reflection h4 { margin: 1rem 0 .3rem; }
 .reflection p { margin: .4rem 0; }
+.about-laws dt { margin-top: .8rem; font-weight: 600; }
+.about-laws dt a { color: var(--accent); }
+.about-laws dt .maxim { display: inline; font-weight: 400; margin: 0; }
+.about-laws dd { margin: .2rem 0 0 0; }
