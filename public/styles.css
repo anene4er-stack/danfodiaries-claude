@@ -91,3 +91,8 @@ pre { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; 
 .about-laws dt a { color: var(--accent); }
 .about-laws dt .maxim { display: inline; font-weight: 400; margin: 0; }
 .about-laws dd { margin: .2rem 0 0 0; }
+
+#account { margin: .4rem 0; }
+.account-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.account-form input { width: auto; flex: 1 1 160px; }
+.account-form .hint, .account-form .error { flex-basis: 100%; margin: 0; }

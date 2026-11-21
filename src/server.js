@@ -13,6 +13,7 @@ import {
   MAX_BODY, MAX_CHAT_CHARS, CHAT_SYSTEM_PROMPT, checkLengths, sendSafeError,
   createRateLimiter, securityHeaders, errorHandler,
 } from './security.js';
+import { createAuth } from './auth.js';
 
 dotenv.config();
 
@@ -34,7 +35,10 @@ export const anthropic = {
 };
 
 // Anything that calls Claude is limited per visitor.
-const aiLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
+// Sign-in is checked first (when REQUIRE_AUTH=true), so limits can be counted per user.
+const auth = createAuth();
+const limiter = createRateLimiter({ windowMs: 60_000, max: 10 });
+const aiLimiter = [auth.requireUser, limiter];
 const requireKey = (_req, res, next) => {
   if (process.env.ANTHROPIC_API_KEY) return next();
   res.status(503).json({
@@ -53,6 +57,7 @@ app.get('/api', (_req, res) => {
     status: 'ok',
     endpoints: [
       '/health',
+      '/api/config',
       '/api/journal/reflect',
       '/api/chat',
       '/api/correspondence',
@@ -81,11 +86,15 @@ app.get('/api', (_req, res) => {
   });
 });
 
+app.get('/api/config', (_req, res) => {
+  res.json(auth.publicConfig());
+});
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'danfodiaries-claude' });
 });
 
-app.post('/api/chat', aiLimiter, requireKey, async (req, res) => {
+app.post('/api/chat', ...aiLimiter, requireKey, async (req, res) => {
   const { message } = req.body || {};
 
   if (typeof message !== 'string' || !message.trim()) {
@@ -115,7 +124,7 @@ app.post('/api/chat', aiLimiter, requireKey, async (req, res) => {
   }
 });
 
-app.post('/api/journal/reflect', aiLimiter, requireKey, async (req, res) => {
+app.post('/api/journal/reflect', ...aiLimiter, requireKey, async (req, res) => {
   const { title, content, mood = 'neutral' } = req.body || {};
 
   if (!content || !String(content).trim()) {
@@ -166,7 +175,7 @@ Provide:
 
 // Reflections call Claude. Without a key (e.g. a hosted site that only offers
 // assessments), answer every reflect request with a clear message instead of an error.
-app.post('/api/:law/reflect', aiLimiter, requireKey);
+app.post('/api/:law/reflect', ...aiLimiter, requireKey);
 
 app.use('/api/correspondence', createCorrespondenceRouter({ anthropic, model }));
 app.use('/api/proportionality', createProportionalityRouter({ anthropic, model }));

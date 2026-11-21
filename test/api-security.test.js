@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 
 process.env.ANTHROPIC_API_KEY ||= 'test-key';
 const { default: handler } = await import('../netlify/functions/api.mjs');
@@ -82,6 +83,43 @@ test('without an API key chat and journal answer 503 while assessments still wor
     assert.equal((await post('/api/rhythm/assess', { season: 'valley', activity: 'restoring' }, '7.7.7.7')).status, 200);
   } finally {
     process.env.ANTHROPIC_API_KEY = saved;
+  }
+});
+
+test('with REQUIRE_AUTH on, AI endpoints need a valid sign-in and assessments stay open', async () => {
+  const saved = { a: process.env.REQUIRE_AUTH, b: process.env.SUPABASE_JWT_SECRET, c: process.env.SUPABASE_ANON_KEY, d: process.env.SUPABASE_URL };
+  process.env.REQUIRE_AUTH = 'true';
+  process.env.SUPABASE_JWT_SECRET = 'test-secret';
+  process.env.SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_ANON_KEY = 'public-anon-key';
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const token = (secret, exp = Math.floor(Date.now() / 1000) + 600) => {
+    const body = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: 'u1', aud: 'authenticated', exp })}`;
+    return `${body}.${crypto.createHmac('sha256', secret).update(body).digest('base64url')}`;
+  };
+  const withToken = (path, body, t) => handler(new Request(`https://example.netlify.app${path}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-nf-client-connection-ip': '2.2.2.2', ...(t ? { authorization: `Bearer ${t}` } : {}) },
+    body: JSON.stringify(body),
+  }), context);
+  try {
+    await withFakeClaude(reply('Hello'), async () => {
+      assert.equal((await withToken('/api/chat', { message: 'Hi' })).status, 401);
+      assert.equal((await withToken('/api/journal/reflect', { content: 'A day.' })).status, 401);
+      assert.equal((await withToken('/api/rhythm/reflect', { content: 'A day.' })).status, 401);
+      assert.equal((await withToken('/api/chat', { message: 'Hi' }, token('wrong-secret'))).status, 401);
+      assert.equal((await withToken('/api/chat', { message: 'Hi' }, token('test-secret', 1))).status, 401);
+      assert.equal((await withToken('/api/chat', { message: 'Hi' }, token('test-secret'))).status, 200);
+      assert.equal((await withToken('/api/rhythm/reflect', { content: 'A day.' }, token('test-secret'))).status, 200);
+      assert.equal((await post('/api/rhythm/assess', { season: 'valley', activity: 'restoring' }, '2.2.2.2')).status, 200);
+    });
+    const cfg = await (await handler(new Request('https://example.netlify.app/api/config'), context)).text();
+    assert.match(cfg, /public-anon-key/);
+    assert.doesNotMatch(cfg, /test-secret/);
+  } finally {
+    for (const [key, v] of [['REQUIRE_AUTH', saved.a], ['SUPABASE_JWT_SECRET', saved.b], ['SUPABASE_ANON_KEY', saved.c], ['SUPABASE_URL', saved.d]]) {
+      if (v === undefined) delete process.env[key]; else process.env[key] = v;
+    }
   }
 });
 

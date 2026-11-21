@@ -33,8 +33,10 @@ export function sendSafeError(res, error) {
   return res.status(502).json({ error: GENERIC_ERROR });
 }
 
-// Where the request came from. Netlify sets this header itself, so clients cannot forge it.
+// Who the request is from: the signed-in user if there is one, otherwise the network address.
+// Netlify sets the address header itself, so clients cannot forge it.
 function clientKey(req) {
+  if (req.user?.id) return `user:${req.user.id}`;
   const header = req.headers?.['x-nf-client-connection-ip'];
   return (typeof header === 'string' && header) || req.socket?.remoteAddress || 'unknown';
 }

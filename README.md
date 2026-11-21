@@ -77,8 +77,12 @@ Notes
   limited to 32kb, journal text is capped at 8000 characters, endpoints that call Claude allow 10 requests per
   minute per visitor, and errors from the AI provider are never shown to callers. The rate limit is held in
   memory per server instance, so it is best effort until accounts and a shared store are added.
-- Still needed before storing private journals: user accounts (planned with Supabase Auth), shared usage quotas,
-  and monitoring.
+- Sign-in: set `REQUIRE_AUTH=true` with `SUPABASE_URL` and `SUPABASE_ANON_KEY` (see `.env.example`) and chat and
+  reflections need a signed-in Supabase user. The page then shows a sign-in form, and rate limits count per user.
+  It is off by default so the current public site keeps working. If it is on and the Supabase values are missing,
+  the endpoints refuse requests instead of opening up.
+- Still needed before storing private journals: the database tables with row-level security, shared usage
+  quotas, and monitoring.
 
 Law of Correspondence ("As above, so below")
 This feature is built from the "System of Correspondence" design doc and the notes on "The Below".
