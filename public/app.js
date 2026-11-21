@@ -368,11 +368,115 @@ const LAWS = [
 
 // ---------- Rendering results ----------
 
-async function api(path, body) {
-  const res = await fetch(path, body === undefined ? {} : {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+// ---------- Sign-in (shown only when the server has Supabase configured) ----------
+
+const SESSION_KEY = 'dd-session';
+let signInConfig = null;
+let current = null; // { accessToken, refreshToken, expiresAt, email }
+
+function readSession() {
+  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch { return null; }
+}
+function writeSession(value) {
+  current = value;
+  try {
+    if (value) sessionStorage.setItem(SESSION_KEY, JSON.stringify(value));
+    else sessionStorage.removeItem(SESSION_KEY);
+  } catch { /* storage can be unavailable; the session then lasts until reload */ }
+}
+
+async function supabaseAuth(path, body) {
+  const res = await fetch(`${signInConfig.supabaseUrl.replace(/\/+$/, '')}/auth/v1/${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: signInConfig.supabaseAnonKey },
+    body: JSON.stringify(body),
   });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error_description || data.msg || data.message || 'Sign-in failed.');
+  return data;
+}
+
+function toSession(data, fallbackEmail) {
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    expiresAt: Date.now() + (Number(data.expires_in) || 3600) * 1000,
+    email: data.user?.email || fallbackEmail,
+  };
+}
+
+// Returns a usable access token, renewing it shortly before it expires.
+async function freshToken() {
+  if (!current) return null;
+  if (current.expiresAt - 30_000 > Date.now()) return current.accessToken;
+  if (!signInConfig || !current.refreshToken) { writeSession(null); renderAccount(); return null; }
+  try {
+    const data = await supabaseAuth('token?grant_type=refresh_token', { refresh_token: current.refreshToken });
+    writeSession(toSession(data, current.email));
+    return current.accessToken;
+  } catch {
+    writeSession(null);
+    renderAccount();
+    return null;
+  }
+}
+
+function renderAccount() {
+  const box = document.getElementById('account');
+  if (!box) return;
+  if (!signInConfig) { box.replaceChildren(); return; }
+  if (current) {
+    box.replaceChildren(h('p', { class: 'hint' }, `Signed in as ${current.email || 'your account'} `,
+      h('button', { type: 'button', class: 'small', onclick: () => { writeSession(null); renderAccount(); } }, 'Sign out')));
+    return;
+  }
+  const email = h('input', { type: 'email', placeholder: 'Email', autocomplete: 'email', required: true });
+  const password = h('input', { type: 'password', placeholder: 'Password (8+ characters)', autocomplete: 'current-password', required: true, minlength: 8 });
+  const note = h('p', { class: 'hint' }, 'Sign in to use reflections.');
+  const form = h('form', { class: 'account-form' }, email, password,
+    h('button', { type: 'submit', class: 'small' }, 'Sign in'),
+    h('button', { type: 'button', class: 'small', 'data-action': 'signup' }, 'Create account'),
+    note);
+  const run = async (action) => {
+    note.className = 'hint';
+    note.textContent = 'Working…';
+    try {
+      if (action === 'signup') {
+        const data = await supabaseAuth('signup', { email: email.value, password: password.value });
+        if (data.access_token) { writeSession(toSession(data, email.value)); renderAccount(); return; }
+        note.textContent = 'Account created. Check your email to confirm it, then sign in.';
+      } else {
+        const data = await supabaseAuth('token?grant_type=password', { email: email.value, password: password.value });
+        writeSession(toSession(data, email.value));
+        renderAccount();
+      }
+    } catch (err) {
+      note.className = 'error';
+      note.textContent = err.message;
+    }
+  };
+  form.addEventListener('submit', (e) => { e.preventDefault(); run('signin'); });
+  form.querySelector('[data-action="signup"]').addEventListener('click', () => { if (form.reportValidity()) run('signup'); });
+  box.replaceChildren(form);
+}
+
+async function loadAccount() {
+  try {
+    const config = await (await fetch('/api/config')).json();
+    signInConfig = config.signIn || null;
+  } catch { signInConfig = null; }
+  current = readSession();
+  renderAccount();
+}
+
+async function api(path, body) {
+  const token = await freshToken();
+  const headers = {};
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(path, body === undefined ? { headers } : { method: 'POST', headers, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({ error: `The server answered ${res.status}.` }));
+  if (res.status === 401 && current) { writeSession(null); renderAccount(); }
   if (!res.ok) throw new Error(data.error || `The server answered ${res.status}.`);
   return data;
 }
@@ -534,3 +638,4 @@ function init() {
 }
 
 init();
+loadAccount();

@@ -1,4 +1,5 @@
 import express from 'express';
+import { checkLengths, sendSafeError } from '../security.js';
 import { getFramework, SYSTEMS } from './framework.js';
 import { assessCorrespondence, ValidationError } from './assess.js';
 import { buildCorrespondenceSystemPrompt, buildCorrespondenceUserPrompt } from './prompt.js';
@@ -36,6 +37,8 @@ export function createCorrespondenceRouter({ anthropic, model }) {
     if (!content || !String(content).trim()) {
       return res.status(400).json({ error: 'Journal content is required.' });
     }
+    const lengthError = checkLengths({ title, content, focus });
+    if (lengthError) return res.status(400).json({ error: lengthError });
     if (!SYSTEMS[system]) {
       return res.status(400).json({ error: `Unknown system "${system}".` });
     }
@@ -65,8 +68,7 @@ export function createCorrespondenceRouter({ anthropic, model }) {
         reflection: reflection || 'No reflection returned.',
       });
     } catch (error) {
-      const messageText = error instanceof Error ? error.message : 'Unknown error';
-      res.status(500).json({ error: messageText });
+      sendSafeError(res, error);
     }
   });
 

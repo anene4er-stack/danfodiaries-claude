@@ -1,4 +1,5 @@
 import express from 'express';
+import { checkLengths, sendSafeError } from '../security.js';
 import { getFramework, LAW } from './framework.js';
 import { assessReciprocity, ValidationError } from './assess.js';
 import { buildReciprocitySystemPrompt, buildReciprocityUserPrompt } from './prompt.js';
@@ -28,6 +29,8 @@ export function createReciprocityRouter({ anthropic, model }) {
     if (!content || !String(content).trim()) {
       return res.status(400).json({ error: 'Journal content is required.' });
     }
+    const lengthError = checkLengths({ title, content, focus });
+    if (lengthError) return res.status(400).json({ error: lengthError });
 
     try {
       const response = await anthropic.messages.create({
@@ -53,8 +56,7 @@ export function createReciprocityRouter({ anthropic, model }) {
         reflection: reflection || 'No reflection returned.',
       });
     } catch (error) {
-      const messageText = error instanceof Error ? error.message : 'Unknown error';
-      res.status(500).json({ error: messageText });
+      sendSafeError(res, error);
     }
   });
 
