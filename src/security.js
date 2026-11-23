@@ -29,7 +29,9 @@ export function checkLengths({ title, content, focus }) {
 
 // Replies with a generic message. Provider details are logged on the server only.
 export function sendSafeError(res, error) {
-  console.error('Assistant request failed:', error?.name || 'Error', error?.status || '');
+  // For rejected credentials, also log Anthropic's short reason (it never contains the key).
+  const reason = [401, 403].includes(error?.status) ? String(error?.error?.error?.message || '').slice(0, 120) : '';
+  console.error('Assistant request failed:', error?.name || 'Error', error?.status || '', reason);
   return res.status(502).json({ error: GENERIC_ERROR });
 }
 
