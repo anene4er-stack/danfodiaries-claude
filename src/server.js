@@ -28,7 +28,7 @@ let client = null;
 export const anthropic = {
   messages: {
     create: (...args) => {
-      if (!client) client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      if (!client) client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY.trim() });
       return client.messages.create(...args);
     },
   },
@@ -40,7 +40,7 @@ const auth = createAuth();
 const limiter = createRateLimiter({ windowMs: 60_000, max: 10 });
 const aiLimiter = [auth.requireUser, limiter];
 const requireKey = (_req, res, next) => {
-  if (process.env.ANTHROPIC_API_KEY) return next();
+  if (process.env.ANTHROPIC_API_KEY?.trim()) return next();
   res.status(503).json({
     error: 'Reflections are not set up on this site yet: no Anthropic API key is configured. Assessments still work.',
   });
