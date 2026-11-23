@@ -108,7 +108,6 @@ app.post('/api/chat', ...aiLimiter, requireKey, async (req, res) => {
     const response = await anthropic.messages.create({
       model,
       max_tokens: 500,
-      temperature: 0.4,
       system: CHAT_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: message.trim() }],
     });
@@ -154,7 +153,6 @@ Provide:
     const response = await anthropic.messages.create({
       model,
       max_tokens: 700,
-      temperature: 0.5,
       messages: [{ role: 'user', content: prompt }],
     });
 
