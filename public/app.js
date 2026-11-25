@@ -373,6 +373,8 @@ const LAWS = [
 const SESSION_KEY = 'dd-session';
 let signInConfig = null;
 let current = null; // { accessToken, refreshToken, expiresAt, email }
+let notice = null; // a one-off message for the sign-in box
+let noticeIsError = false;
 
 function readSession() {
   try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch { return null; }
@@ -394,6 +396,20 @@ async function supabaseAuth(path, body) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error_description || data.msg || data.message || 'Sign-in failed.');
   return data;
+}
+
+// Where Supabase's email links send people back to: this page, wherever it is hosted.
+// Supabase only follows it if the address is allowed under Authentication → URL Configuration.
+const redirectTo = () => `${location.origin}${location.pathname}`;
+
+// After a confirmation link, Supabase returns here with the session (or an error) in the
+// address after "#". Returns { session } or { error } for such an address, otherwise null.
+function readAuthRedirect(hash) {
+  if (!/(^|[#&])(access_token|error_description|error)=/.test(hash)) return null;
+  const params = new URLSearchParams(hash.replace(/^#/, ''));
+  if (params.get('access_token')) return { session: toSession(Object.fromEntries(params), undefined) };
+  const reason = params.get('error_description') || params.get('error') || 'The link could not be used.';
+  return { error: reason.replace(/\+/g, ' ') };
 }
 
 function toSession(data, fallbackEmail) {
@@ -432,19 +448,28 @@ function renderAccount() {
   }
   const email = h('input', { type: 'email', placeholder: 'Email', autocomplete: 'email', required: true });
   const password = h('input', { type: 'password', placeholder: 'Password (8+ characters)', autocomplete: 'current-password', required: true, minlength: 8 });
-  const note = h('p', { class: 'hint' }, 'Sign in to use reflections.');
+  const note = h('p', { class: 'hint' }, notice || 'Sign in to use reflections.');
+  if (noticeIsError) note.className = 'error';
+  notice = null;
+  noticeIsError = false;
+  const resend = h('button', { type: 'button', class: 'small', hidden: true, 'data-action': 'resend' }, 'Resend confirmation email');
   const form = h('form', { class: 'account-form' }, email, password,
     h('button', { type: 'submit', class: 'small' }, 'Sign in'),
     h('button', { type: 'button', class: 'small', 'data-action': 'signup' }, 'Create account'),
+    resend,
     note);
   const run = async (action) => {
     note.className = 'hint';
     note.textContent = 'Working…';
     try {
       if (action === 'signup') {
-        const data = await supabaseAuth('signup', { email: email.value, password: password.value });
+        const data = await supabaseAuth(`signup?redirect_to=${encodeURIComponent(redirectTo())}`, { email: email.value, password: password.value });
         if (data.access_token) { writeSession(toSession(data, email.value)); renderAccount(); return; }
-        note.textContent = 'Account created. Check your email to confirm it, then sign in.';
+        note.textContent = `We asked for a confirmation email to be sent to ${email.value}. Check your inbox and spam folder; it can take a few minutes. Open the link in it, then sign in here. No email after 10 minutes? Use “Resend confirmation email”.`;
+        resend.hidden = false;
+      } else if (action === 'resend') {
+        await supabaseAuth(`resend?redirect_to=${encodeURIComponent(redirectTo())}`, { type: 'signup', email: email.value });
+        note.textContent = `Asked for another confirmation email for ${email.value}. Check your inbox and spam folder. If you already confirmed, just sign in.`;
       } else {
         const data = await supabaseAuth('token?grant_type=password', { email: email.value, password: password.value });
         writeSession(toSession(data, email.value));
@@ -452,11 +477,15 @@ function renderAccount() {
       }
     } catch (err) {
       note.className = 'error';
-      note.textContent = err.message;
+      note.textContent = /not confirmed/i.test(err.message)
+        ? 'This email address is not confirmed yet. Open the link in the confirmation email, or use “Resend confirmation email”.'
+        : err.message;
+      if (/not confirmed/i.test(err.message)) resend.hidden = false;
     }
   };
   form.addEventListener('submit', (e) => { e.preventDefault(); run('signin'); });
   form.querySelector('[data-action="signup"]').addEventListener('click', () => { if (form.reportValidity()) run('signup'); });
+  resend.addEventListener('click', () => { if (email.reportValidity()) run('resend'); });
   box.replaceChildren(form);
 }
 
@@ -466,6 +495,24 @@ async function loadAccount() {
     signInConfig = config.signIn || null;
   } catch { signInConfig = null; }
   current = readSession();
+  const redirect = signInConfig ? readAuthRedirect(location.hash) : null;
+  if (redirect) {
+    history.replaceState(null, '', `${location.pathname}${location.search}`);
+    if (redirect.session) {
+      writeSession(redirect.session);
+      if (!current.email) {
+        try {
+          const res = await fetch(`${signInConfig.supabaseUrl.replace(/\/+$/, '')}/auth/v1/user`, {
+            headers: { apikey: signInConfig.supabaseAnonKey, Authorization: `Bearer ${current.accessToken}` },
+          });
+          if (res.ok) writeSession({ ...current, email: (await res.json()).email });
+        } catch { /* the email is only for display */ }
+      }
+    } else {
+      notice = `That link did not work: ${redirect.error.replace(/\.?$/, '.')} Sign in, or use “Resend confirmation email”.`;
+      noticeIsError = true;
+    }
+  }
   renderAccount();
 }
 
